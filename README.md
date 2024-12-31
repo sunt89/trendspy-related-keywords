@@ -92,25 +92,36 @@ git clone https://github.com/yourusername/trends-monitor.git
 cd trends-monitor
 ```
 
-2. 安装依赖：
+2. 创建并激活虚拟环境（推荐）：
+```bash
+# 在 Windows 上
+python -m venv venv
+venv\Scripts\activate
+
+# 在 macOS/Linux 上
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. 安装依赖：
 ```bash
 pip install -r requirements.txt
 ```
 
-3. 配置环境变量：
+4. 配置环境变量：
 ```bash
 cp .env.example .env
 # 编辑 .env 文件，填入你的邮件配置
 ```
 
-4. Gmail 设置：
+5. Gmail 设置：
    - 开启两步验证：Google账号 -> 安全性 -> 2步验证
    - 生成应用专用密码：
      1. Google账号 -> 安全性 -> 应用专用密码
      2. 选择"其他"，输入名称（如"Trends Monitor"）
      3. 复制生成的16位密码到 `.env` 文件的 `TRENDS_SENDER_PASSWORD`
 
-5. 修改其他配置：
+6. 修改其他配置：
    - 根据需要在 `config.py` 中调整其他配置项
    - 添加或修改要监控的关键词
 
@@ -185,6 +196,12 @@ data_20240101/
 3. 计划任务问题：
    - 检查系统时间是否正确
    - 确保程序有持续运行的权限 
+
+4. SSL相关警告：
+   - 如果看到 urllib3 SSL 警告，不会影响程序运行
+   - 如果想要消除警告，可以：
+     1. 升级系统的 OpenSSL
+     2. 或者使用 `urllib3<2.0.0`（已在 requirements.txt 中指定）
 
 ## 开发说明
 
