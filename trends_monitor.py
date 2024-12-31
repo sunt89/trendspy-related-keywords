@@ -287,9 +287,18 @@ def process_trends():
 
 def run_scheduler():
     """Run the scheduler"""
-    # 添加一个随机延迟，避免整点触发
-    random_minutes = random.randint(0, SCHEDULE_CONFIG['random_delay_minutes'])
-    schedule_time = f"{SCHEDULE_CONFIG['hour']}:{random_minutes:02d}"
+    # 从配置中获取小时和分钟
+    schedule_hour = SCHEDULE_CONFIG['hour']
+    schedule_minute = SCHEDULE_CONFIG.get('minute', 0)  # 默认为0分钟
+    
+    # 添加随机延迟（如果配置了的话）
+    if SCHEDULE_CONFIG.get('random_delay_minutes', 0) > 0:
+        random_minutes = random.randint(0, SCHEDULE_CONFIG['random_delay_minutes'])
+        schedule_minute = (schedule_minute + random_minutes) % 60
+        # 如果分钟数超过59，需要调整小时数
+        schedule_hour = (schedule_hour + (schedule_minute + random_minutes) // 60) % 24
+    
+    schedule_time = f"{schedule_hour:02d}:{schedule_minute:02d}"
     
     schedule.every().day.at(schedule_time).do(process_trends)
     
@@ -297,10 +306,11 @@ def run_scheduler():
     
     # 如果启动时间接近计划执行时间，等待到下一天
     now = datetime.now()
-    if now.hour == SCHEDULE_CONFIG['hour'] and now.minute >= random_minutes:
+    scheduled_time = now.replace(hour=schedule_hour, minute=schedule_minute, second=0, microsecond=0)
+    
+    if now >= scheduled_time:
         logging.info("Current time is past scheduled time, waiting for tomorrow")
-        next_run = now + timedelta(days=1)
-        next_run = next_run.replace(hour=SCHEDULE_CONFIG['hour'], minute=random_minutes)
+        next_run = scheduled_time + timedelta(days=1)
         time.sleep((next_run - now).total_seconds())
     
     while True:

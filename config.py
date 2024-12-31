@@ -1,3 +1,11 @@
+'''
+Author: xutianqi
+Date: 2024-12-31 20:21:22
+LastEditTime: 2024-12-31 21:27:21
+LastEditors: xutianqi
+Description: 
+FilePath: /trendspy-related-keywords/config.py
+'''
 import os
 from dotenv import load_dotenv
 
@@ -21,7 +29,16 @@ EMAIL_CONFIG = {
 
 # Keywords to monitor
 KEYWORDS = [
-    "AI"
+    "AI",
+    "AI Agent",
+    "Sprunki",
+    "AI Image",
+    "AI Video",
+    "AI Voice",
+    "AI Chatbot",
+    "Game",
+    "Game Mod",
+    "Puzzle Game",
     # Add more keywords as needed
 ]
 
@@ -43,8 +60,9 @@ RATE_LIMIT_CONFIG = {
 
 # Schedule Configuration
 SCHEDULE_CONFIG = {
-    'hour': 13,  # 北京时间13点
-    'random_delay_minutes': 10,  # 随机延迟的最大分钟数
+    'hour': 13,                    # 计划执行的小时（0-23）
+    'minute': 5,                 # 计划执行的分钟（0-59）
+    'random_delay_minutes': 15   # 随机延迟的最大分钟数（可选）
 }
 
 # Monitoring Configuration
