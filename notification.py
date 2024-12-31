@@ -109,10 +109,18 @@ class NotificationManager:
                 formatted_lines.append(f"❌ {line}")
             elif ':' in line and 'Growth:' in line:
                 # 处理趋势数据行
-                keyword, rest = line.split(':', 1)
-                value = rest.split('Growth:', 1)[1].strip('() ')
-                formatted_lines.append(f"↗️ {keyword.strip()}")
-                formatted_lines.append(f"   增长幅度: {value}")
+                try:
+                    # 分离关键词和相关查询
+                    keyword, rest = line.split(':', 1)
+                    related_query, growth = rest.split('(Growth:', 1)
+                    growth = growth.strip('() ')
+                    
+                    formatted_lines.append(f"\n↗️ 关键词: {keyword.strip()}")
+                    formatted_lines.append(f"   相关查询: {related_query.strip()}")
+                    formatted_lines.append(f"   增长幅度: {growth}")
+                except:
+                    # 如果解析失败，直接添加原始行
+                    formatted_lines.append(f"↗️ {line}")
             else:
                 formatted_lines.append(line)
         
