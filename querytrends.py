@@ -5,6 +5,54 @@ import time
 import random
 from datetime import datetime
 import backoff  
+from config import TRENDS_CONFIG
+import requests
+from urllib.parse import quote
+import re
+
+def get_google_nid():
+    """
+    自动获取Google NID cookie
+    """
+    session = requests.Session()
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+    }
+    
+    try:
+        # 访问Google主页获取初始cookie
+        response = session.get('https://www.google.com/', headers=headers)
+        response.raise_for_status()
+        
+        # 从响应中提取NID
+        cookies = session.cookies.get_dict()
+        nid = cookies.get('NID')
+        
+        if nid:
+            return nid
+        
+        # 如果没有直接获取到NID，尝试从搜索页面获取
+        search_term = quote('test')
+        response = session.get(f'https://www.google.com/search?q={search_term}', headers=headers)
+        response.raise_for_status()
+        
+        cookies = session.cookies.get_dict()
+        nid = cookies.get('NID')
+        
+        if nid:
+            return nid
+            
+        # 如果还是没有获取到，从响应内容中尝试提取
+        match = re.search(r'NID=([^;]+)', response.text)
+        if match:
+            return match.group(1)
+            
+        return None
+    except Exception as e:
+        print(f"获取NID失败: {str(e)}")
+        return None
 
 @backoff.on_exception(
     backoff.expo,  # 指数退避策略
@@ -32,6 +80,16 @@ def get_related_queries(keyword, geo='', timeframe='today 12-m'):
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
     }
+    
+    # 尝试从配置获取NID，如果没有则自动获取
+    nid = TRENDS_CONFIG.get('nid')
+    if not nid:
+        nid = get_google_nid()
+        if nid:
+            print("成功自动获取NID")
+    
+    if nid:
+        headers['Cookie'] = f'NID={nid}'
     
     try:
         # 检查请求限制

@@ -228,28 +228,52 @@ def process_trends():
         
         # Send alerts for high rising trends
         if high_rising_trends:
-            alert_body = """
-            <h2>High Rising Trends Alert</h2>
-            <p>Query Parameters:</p>
-            <ul>
-            <li>Time Range: {}</li>
-            <li>Region: {}</li>
-            </ul>
-            <p>The following trends have shown significant growth:</p>
-            <ul>
-            """.format(
-                TRENDS_CONFIG['timeframe'],
-                TRENDS_CONFIG['geo'] or 'Global'
-            )
-            for keyword, related_keywords, value in high_rising_trends:
-                alert_body += f"<li>{keyword}: {related_keywords} (Growth: {value})</li>"
-            alert_body += "</ul>"
-            
-            if not notification_manager.send_notification(
-                subject="🚨 High Rising Trends Alert",
-                body=alert_body
-            ):
-                logging.warning("Failed to send alert notification, but data collection completed")
+            # 将高趋势分批处理，每批最多10个趋势
+            batch_size = 10
+            for i in range(0, len(high_rising_trends), batch_size):
+                batch_trends = high_rising_trends[i:i + batch_size]
+                batch_number = i // batch_size + 1
+                total_batches = (len(high_rising_trends) + batch_size - 1) // batch_size
+                
+                alert_body = f"""
+                <h2>📊 High Rising Trends Alert</h2>
+                <hr>
+                <h3>📌 Query Parameters:</h3>
+                <ul>
+                    <li>🕒 Time Range: {TRENDS_CONFIG['timeframe']}</li>
+                    <li>🌍 Region: {TRENDS_CONFIG['geo'] or 'Global'}</li>
+                </ul>
+                <h3>📈 Significant Growth Trends:</h3>
+                <table border="1" cellpadding="5" style="border-collapse: collapse;">
+                    <tr>
+                        <th>🔍 Base Keyword</th>
+                        <th>🔗 Related Query</th>
+                        <th>📈 Growth</th>
+                    </tr>
+                """
+                
+                for keyword, related_keywords, value in batch_trends:
+                    alert_body += f"""
+                    <tr>
+                        <td><strong>🎯 {keyword}</strong></td>
+                        <td>➡️ {related_keywords}</td>
+                        <td align="right" style="color: #28a745;">⬆️ {value}%</td>
+                    </tr>
+                    """
+                
+                alert_body += "</table>"
+                
+                if batch_number < total_batches:
+                    alert_body += f"<p><i>This is batch {batch_number} of {total_batches}. More results will follow.</i></p>"
+                
+                if not notification_manager.send_notification(
+                    subject=f"📊 Rising Trends Alert ({batch_number}/{total_batches})",
+                    body=alert_body
+                ):
+                    logging.warning(f"Failed to send alert notification for batch {batch_number}, but data collection completed")
+                
+                # 添加短暂延迟，避免消息发送过快
+                time.sleep(2)
         
         logging.info("Daily trends processing completed successfully")
         return True
