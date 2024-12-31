@@ -4,6 +4,12 @@ from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv()
 
+# Notification Configuration
+NOTIFICATION_CONFIG = {
+    'method': 'wechat',  # 可选值: 'email', 'wechat', 'both'
+    'wechat_receiver': os.getenv('TRENDS_WECHAT_RECEIVER', ''),  # 微信接收者的备注名或微信号
+}
+
 # Email Configuration
 EMAIL_CONFIG = {
     'smtp_server': os.getenv('TRENDS_SMTP_SERVER', 'smtp.gmail.com'),

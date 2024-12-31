@@ -1,106 +1,30 @@
-# Google Trends Monitor
+# Google Trends 监控工具
 
-一个用于监控 Google Trends 数据的自动化工具，支持定时获取关键词相关查询数据，生成报告，并通过邮件通知重要趋势变化。
+这是一个用于监控 Google Trends 数据的自动化工具。它可以定期查询指定关键词的趋势数据，生成报告，并通过邮件或微信发送通知。
 
 ## 功能特点
 
-- 自动监控多个关键词的 Google Trends 数据
-- 支持自定义时间范围和地区
-- 批量处理关键词以避免请求限制
-- 自动生成每日数据报告（CSV格式）
-- 高增长趋势的即时邮件通知
-- 完整的日志记录
-- 支持测试模式和计划任务模式
+- 🔄 每日自动查询多个关键词的趋势数据
+- 📊 生成详细的数据报告，包括上升趋势和热门趋势
+- 📱 支持多种通知方式（邮件和微信）
+- ⚡ 智能的请求频率控制，避免触发限制
+- 📈 监控关键词的增长趋势，当超过阈值时发送提醒
+- 📁 按日期组织数据文件，方便查询历史记录
 
-## 配置说明
-
-### 1. 环境变量配置
-复制 `.env.example` 文件为 `.env` 并设置以下环境变量：
-```bash
-# SMTP服务器设置
-TRENDS_SMTP_SERVER=smtp.gmail.com
-TRENDS_SMTP_PORT=587
-
-# 邮件账号设置
-TRENDS_SENDER_EMAIL=your-email@gmail.com
-TRENDS_SENDER_PASSWORD=your-app-password
-TRENDS_RECIPIENT_EMAIL=recipient@example.com
-```
-
-### 2. 监控关键词 (KEYWORDS)
-在 `config.py` 中配置要监控的关键词：
-```python
-KEYWORDS = [
-    'Python',
-    'AI',
-    'Machine Learning',
-    # 添加更多关键词
-]
-```
-
-### 3. 趋势查询配置 (TRENDS_CONFIG)
-```python
-TRENDS_CONFIG = {
-    'timeframe': 'now 1-d',  # 时间范围
-    'geo': '',              # 地区代码
-}
-```
-- timeframe 可选值：
-  - 'now 1-d': 最近1天
-  - 'now 7-d': 最近7天
-  - 'now 30-d': 最近30天
-  - 'now 90-d': 最近90天
-  - 'today 12-m': 最近12个月
-  - '2024-12-30 2024-12-31': 日期范围
-- geo 可选值：
-  - '': 全球
-  - 'US': 美国
-  - 'CN': 中国
-  - 其他国家代码
-
-### 4. 频率限制配置 (RATE_LIMIT_CONFIG)
-```python
-RATE_LIMIT_CONFIG = {
-    'max_retries': 3,        # 最大重试次数
-    'min_delay_between_queries': 10,  # 查询间最小延迟（秒）
-    'max_delay_between_queries': 20,  # 查询间最大延迟（秒）
-    'batch_size': 5,         # 每批处理的关键词数量
-    'batch_interval': 300,   # 批次间隔时间（秒）
-}
-```
-
-### 5. 计划任务配置 (SCHEDULE_CONFIG)
-```python
-SCHEDULE_CONFIG = {
-    'hour': 13,  # 执行时间（24小时制）
-    'random_delay_minutes': 10,  # 随机延迟范围（分钟）
-}
-```
-
-### 6. 监控阈值配置 (MONITOR_CONFIG)
-```python
-MONITOR_CONFIG = {
-    'rising_threshold': 1000,  # 高增长趋势阈值
-}
-```
-
-## 安装和设置
+## 安装说明
 
 1. 克隆仓库：
 ```bash
-git clone https://github.com/yourusername/trends-monitor.git
-cd trends-monitor
+git clone [repository-url]
+cd [repository-name]
 ```
 
 2. 创建并激活虚拟环境（推荐）：
 ```bash
-# 在 Windows 上
 python -m venv venv
-venv\Scripts\activate
-
-# 在 macOS/Linux 上
-python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Linux/Mac
+# 或
+.\venv\Scripts\activate  # Windows
 ```
 
 3. 安装依赖：
@@ -108,109 +32,116 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. 配置环境变量：
+## 配置说明
+
+1. 复制环境变量示例文件：
 ```bash
 cp .env.example .env
-# 编辑 .env 文件，填入你的邮件配置
 ```
 
-5. Gmail 设置：
-   - 开启两步验证：Google账号 -> 安全性 -> 2步验证
-   - 生成应用专用密码：
-     1. Google账号 -> 安全性 -> 应用专用密码
-     2. 选择"其他"，输入名称（如"Trends Monitor"）
-     3. 复制生成的16位密码到 `.env` 文件的 `TRENDS_SENDER_PASSWORD`
+2. 编辑 `.env` 文件，配置以下信息：
+```
+# 邮件配置（使用Gmail时）
+TRENDS_SMTP_SERVER=smtp.gmail.com
+TRENDS_SMTP_PORT=587
+TRENDS_SENDER_EMAIL=your-email@gmail.com
+TRENDS_SENDER_PASSWORD=your-app-password
+TRENDS_RECIPIENT_EMAIL=recipient@example.com
 
-6. 修改其他配置：
-   - 根据需要在 `config.py` 中调整其他配置项
-   - 添加或修改要监控的关键词
+# 微信配置
+TRENDS_WECHAT_RECEIVER=filehelper  # 接收者的微信号或备注名
+```
 
-## 使用方法
+3. 编辑 `config.py` 文件，根据需要修改：
+- 监控的关键词列表
+- 查询时间范围
+- 数据采集频率
+- 报告格式
+- 其他配置项
 
-### 测试模式
-立即执行一次数据收集：
+## 使用说明
+
+### 主程序
+
+1. 测试模式运行：
 ```bash
-# 使用配置文件中的关键词
 python trends_monitor.py --test
+```
 
-# 使用指定的关键词
+2. 使用指定关键词测试：
+```bash
 python trends_monitor.py --test --keywords "Python" "AI"
 ```
 
-### 计划任务模式
-启动定时监控任务：
+3. 正常运行（定时任务模式）：
 ```bash
 python trends_monitor.py
 ```
 
-## 输出说明
+### 微信工具
 
-### 1. 数据存储
-数据按日期存储在独立目录中：
-```
-data_20240101/
-  ├── daily_report_20240101.csv     # 当日汇总报告
-  ├── related_queries_Python_*.json  # 各关键词的详细数据
-  └── ...
+使用微信通知功能前，需要先运行微信工具来获取正确的接收者ID：
+
+```bash
+python wechat_utils.py
 ```
 
-### 2. 邮件通知
-- 每日报告邮件：包含所有关键词的相关查询数据
-- 高增长趋势通知：当发现增长超过阈值的趋势时立即发送
-- 错误通知：当发生错误时发送详细信息
+微信工具提供以下功能：
+- 搜索联系人
+- 搜索群聊
+- 显示所有联系人
+- 显示所有群聊
 
-### 3. 日志记录
-所有操作记录在 `trends_monitor.log` 文件中，包括：
-- 查询执行情况
-- 错误信息
-- 邮件发送状态
-- 配置信息
+## 数据输出
+
+1. 数据文件
+- 每日数据保存在 `data_YYYYMMDD` 目录下
+- JSON 格式的原始数据
+- CSV 格式的汇总报告
+
+2. 通知内容
+- 每日趋势报告
+- 高增长趋势提醒（当增长超过阈值时）
+- 错误通知（当发生异常时）
 
 ## 注意事项
 
-1. 请求频率限制：
-   - 使用批处理和延迟机制避免触发限制
-   - 可以通过 `RATE_LIMIT_CONFIG` 调整请求间隔
+1. Gmail 配置
+- 需要开启两步验证
+- 需要生成应用专用密码
+- 详细说明：[Gmail 应用密码设置](https://support.google.com/accounts/answer/185833)
 
-2. 邮件发送：
-   - 强烈建议使用 Gmail
-   - 必须使用应用专用密码而不是账号密码
-   - 确保网络环境能够访问 Gmail
+2. 微信配置
+- 首次使用需要扫码登录
+- 登录状态会保持一段时间
+- 建议使用文件传输助手（filehelper）进行测试
 
-3. 数据存储：
-   - 确保运行目录有足够的存储空间
-   - 定期清理历史数据
+3. 请求限制
+- 已实现智能的请求频率控制
+- 建议不要设置过多关键词
+- 批量处理时会自动添加延迟
 
-## 故障排除
+## 常见问题
 
-1. 邮件发送失败：
-   - 检查 Gmail 配置是否正确
-   - 确认应用专用密码是否有效
-   - 检查网络连接
+1. 邮件发送失败
+- 检查 SMTP 配置是否正确
+- 确认应用密码是否正确
+- 检查网络连接状态
 
-2. 数据获取失败：
-   - 检查网络连接
-   - 可能触发了 Google Trends 的频率限制
-   - 尝试调整 `RATE_LIMIT_CONFIG` 中的延迟设置
+2. 微信登录问题
+- 确保微信版本兼容
+- 尝试重新扫码登录
+- 检查防火墙设置
 
-3. 计划任务问题：
-   - 检查系统时间是否正确
-   - 确保程序有持续运行的权限 
+3. 数据采集问题
+- 检查网络连接
+- 确认关键词格式正确
+- 查看日志文件获取详细错误信息
 
-4. SSL相关警告：
-   - 如果看到 urllib3 SSL 警告，不会影响程序运行
-   - 如果想要消除警告，可以：
-     1. 升级系统的 OpenSSL
-     2. 或者使用 `urllib3<2.0.0`（已在 requirements.txt 中指定）
+## 许可证
 
-## 开发说明
+[您的许可证类型]
 
-1. 环境变量：
-   - 所有敏感信息都存储在 `.env` 文件中
-   - 不要将 `.env` 文件提交到版本控制系统
-   - 可以参考 `.env.example` 创建自己的 `.env` 文件
+## 贡献指南
 
-2. 版本控制：
-   - `.gitignore` 已配置为排除敏感文件和临时文件
-   - 数据文件夹 (`data_*`) 不会被提交
-   - 日志文件 (`*.log`) 不会被提交 
+欢迎提交 Issue 和 Pull Request！ 

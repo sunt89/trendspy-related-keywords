@@ -1,9 +1,5 @@
 import os
-import smtplib
 import pandas as pd
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.application import MIMEApplication
 from datetime import datetime, timedelta
 import schedule
 import time
@@ -21,8 +17,10 @@ from config import (
     MONITOR_CONFIG,
     LOGGING_CONFIG,
     STORAGE_CONFIG,
-    TRENDS_CONFIG
+    TRENDS_CONFIG,
+    NOTIFICATION_CONFIG
 )
+from notification import NotificationManager
 
 # Configure logging
 logging.basicConfig(
@@ -36,6 +34,9 @@ logging.basicConfig(
 
 # 创建请求限制器实例
 request_limiter = RequestLimiter()
+
+# 创建通知管理器实例
+notification_manager = NotificationManager()
 
 def send_email(subject, body, attachments=None):
     """Send email with optional attachments"""
@@ -218,12 +219,12 @@ def process_trends():
                 len(all_results),
                 len(KEYWORDS) - len(all_results)
             )
-            if not send_email(
+            if not notification_manager.send_notification(
                 subject=f"Daily Trends Report - {datetime.now().strftime('%Y-%m-%d')}",
                 body=report_body,
                 attachments=[report_file]
             ):
-                logging.warning("Failed to send daily report email, but data collection completed")
+                logging.warning("Failed to send daily report, but data collection completed")
         
         # Send alerts for high rising trends
         if high_rising_trends:
@@ -244,17 +245,17 @@ def process_trends():
                 alert_body += f"<li>{keyword}: {related_keywords} (Growth: {value})</li>"
             alert_body += "</ul>"
             
-            if not send_email(
+            if not notification_manager.send_notification(
                 subject="🚨 High Rising Trends Alert",
                 body=alert_body
             ):
-                logging.warning("Failed to send alert email, but data collection completed")
+                logging.warning("Failed to send alert notification, but data collection completed")
         
         logging.info("Daily trends processing completed successfully")
         return True
     except Exception as e:
         logging.error(f"Error in trends processing: {str(e)}")
-        send_email(
+        notification_manager.send_notification(
             subject="❌ Error in Trends Processing",
             body=f"<p>An error occurred during trends processing:</p><pre>{str(e)}</pre>"
         )
