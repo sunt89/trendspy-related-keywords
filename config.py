@@ -1,11 +1,3 @@
-'''
-Author: xutianqi
-Date: 2024-12-31 20:21:22
-LastEditTime: 2024-12-31 21:27:21
-LastEditors: xutianqi
-Description: 
-FilePath: /trendspy-related-keywords/config.py
-'''
 import os
 from dotenv import load_dotenv
 
@@ -30,6 +22,7 @@ EMAIL_CONFIG = {
 # Keywords to monitor
 KEYWORDS = [
     "AI",
+    "Generator",
     "AI Agent",
     "Sprunki",
     "AI Image",
@@ -38,13 +31,14 @@ KEYWORDS = [
     "AI Chatbot",
     "Game",
     "Game Mod",
-    "Puzzle Game",
     # Add more keywords as needed
 ]
 
+
 # Trends Query Configuration
 TRENDS_CONFIG = {
-    'timeframe': 'now 1-d',  # 可选值: now 1-d, now 7-d, now 30-d, now 90-d, today 12-m 或者 "2024-01-01 2024-01-31"
+    'timeframe': 'last-2-d',  # 可选值: now 1-d, now 7-d, now 30-d, now 90-d, today 12-m, 
+                            # last-2-d, last-3-d 或者 "2024-01-01 2024-01-31"
     'geo': '',  # 地区代码，例如: 'US' 表示美国, 'CN' 表示中国, '' 表示全球
     'nid': os.getenv('TRENDS_NID', ''),  # Google NID cookie，用于认证
 }

@@ -127,30 +127,37 @@ def generate_daily_report(results, directory):
         return report_file
     return None
 
-@backoff.on_exception(
-    backoff.expo,
-    Exception,
-    max_tries=RATE_LIMIT_CONFIG['max_retries'],
-    jitter=backoff.full_jitter
-)
-def get_trends_with_retry(keywords_batch):
-    """使用重试机制获取趋势数据"""
-    return batch_get_queries(
-        keywords_batch,
-        timeframe=TRENDS_CONFIG['timeframe'],
-        geo=TRENDS_CONFIG['geo'],
-        delay_between_queries=random.uniform(
-            RATE_LIMIT_CONFIG['min_delay_between_queries'],
-            RATE_LIMIT_CONFIG['max_delay_between_queries']
-        )
-    )
+def get_date_range_timeframe(timeframe):
+    """Convert special timeframe formats to date range format
+    
+    Args:
+        timeframe (str): Timeframe string like 'last-2-d' or 'last-3-d'
+        
+    Returns:
+        str: Date range format string like '2024-01-01 2024-01-31'
+    """
+    if not timeframe.startswith('last-'):
+        return timeframe
+        
+    try:
+        # 解析天数
+        days = int(timeframe.split('-')[1])
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=days)
+        # 格式化日期字符串
+        return f"{start_date.strftime('%Y-%m-%d')} {end_date.strftime('%Y-%m-%d')}"
+    except (ValueError, IndexError):
+        logging.warning(f"Invalid timeframe format: {timeframe}, falling back to 'now 1-d'")
+        return 'now 1-d'
 
-def process_keywords_batch(keywords_batch, directory, all_results, high_rising_trends):
+def process_keywords_batch(keywords_batch, directory, all_results, high_rising_trends, timeframe):
     """处理一批关键词"""
     try:
         logging.info(f"Processing batch of {len(keywords_batch)} keywords")
-        logging.info(f"Query parameters: timeframe={TRENDS_CONFIG['timeframe']}, geo={TRENDS_CONFIG['geo'] or 'Global'}")
-        results = get_trends_with_retry(keywords_batch)
+        logging.info(f"Query parameters: timeframe={timeframe}, geo={TRENDS_CONFIG['geo'] or 'Global'}")
+        
+        # 使用传入的 timeframe 参数
+        results = get_trends_with_retry(keywords_batch, timeframe)
         
         for keyword, data in results.items():
             if data:
@@ -170,20 +177,50 @@ def process_keywords_batch(keywords_batch, directory, all_results, high_rising_t
         logging.error(f"Error processing batch: {str(e)}")
         return False
 
+@backoff.on_exception(
+    backoff.expo,
+    Exception,
+    max_tries=RATE_LIMIT_CONFIG['max_retries'],
+    jitter=backoff.full_jitter
+)
+def get_trends_with_retry(keywords_batch, timeframe):
+    """使用重试机制获取趋势数据"""
+    return batch_get_queries(
+        keywords_batch,
+        timeframe=timeframe,  # 使用传入的 timeframe
+        geo=TRENDS_CONFIG['geo'],
+        delay_between_queries=random.uniform(
+            RATE_LIMIT_CONFIG['min_delay_between_queries'],
+            RATE_LIMIT_CONFIG['max_delay_between_queries']
+        )
+    )
+
 def process_trends():
     """Main function to process trends data"""
     try:
         logging.info("Starting daily trends processing")
-        logging.info(f"Using configuration: timeframe={TRENDS_CONFIG['timeframe']}, geo={TRENDS_CONFIG['geo'] or 'Global'}")
+        
+        # 处理特殊的 timeframe 格式
+        timeframe = TRENDS_CONFIG['timeframe']
+        actual_timeframe = get_date_range_timeframe(timeframe)
+        
+        logging.info(f"Using configuration: timeframe={actual_timeframe}, geo={TRENDS_CONFIG['geo'] or 'Global'}")
         directory = create_daily_directory()
         
         all_results = {}
         high_rising_trends = []
         
-        # 将关键词分批处理
+        # 将关键词分批处理，使用实际的 timeframe
         for i in range(0, len(KEYWORDS), RATE_LIMIT_CONFIG['batch_size']):
             keywords_batch = KEYWORDS[i:i + RATE_LIMIT_CONFIG['batch_size']]
-            success = process_keywords_batch(keywords_batch, directory, all_results, high_rising_trends)
+            # 传递实际的 timeframe 到查询函数
+            success = process_keywords_batch(
+                keywords_batch, 
+                directory, 
+                all_results, 
+                high_rising_trends,
+                actual_timeframe
+            )
             
             if not success:
                 logging.error(f"Failed to process batch starting with keyword: {keywords_batch[0]}")
@@ -194,7 +231,7 @@ def process_trends():
                 wait_time = RATE_LIMIT_CONFIG['batch_interval'] + random.uniform(0, 60)
                 logging.info(f"Waiting {wait_time:.1f} seconds before processing next batch...")
                 time.sleep(wait_time)
-        
+
         # Generate and send daily report
         report_file = generate_daily_report(all_results, directory)
         if report_file:
