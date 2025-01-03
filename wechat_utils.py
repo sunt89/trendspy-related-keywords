@@ -6,6 +6,7 @@ import time
 import threading
 import atexit
 from typing import Optional
+from config import NOTIFICATION_CONFIG
 
 class WeChatManager:
     _instance = None
@@ -28,12 +29,19 @@ class WeChatManager:
         self._login_lock = threading.Lock()
         self._is_shutting_down = False
         
+        # 检查是否需要微信功能
+        self._need_wechat = NOTIFICATION_CONFIG['method'] in ['wechat', 'both']
+        
+        # 只有在需要微信功能时才检查itchat是否可用
+        self._has_wechat = self._need_wechat and self._check_wechat_available()
+        
         # 设置日志
         self._setup_logging()
         
         # 初始化时尝试使用现有的登录状态
-        self._try_load_login_status()
-        
+        if self._has_wechat:
+            self._try_load_login_status()
+    
     def _setup_logging(self):
         """设置日志配置"""
         try:
@@ -135,6 +143,14 @@ class WeChatManager:
     
     def ensure_login(self) -> bool:
         """确保登录状态，如果未登录则尝试登录"""
+        if not self._need_wechat:
+            logging.info("WeChat functionality not needed based on configuration")
+            return False
+            
+        if not self._has_wechat:
+            logging.error("WeChat functionality not available")
+            return False
+            
         if self._logged_in and self.check_login_status():
             return True
         return self.login()
@@ -242,6 +258,15 @@ class WeChatManager:
     def __del__(self):
         """析构函数，不做任何清理"""
         pass
+    
+    def _check_wechat_available(self) -> bool:
+        """检查是否安装了itchat"""
+        try:
+            import itchat
+            return True
+        except ImportError:
+            logging.warning("WeChat functionality not available: itchat not installed")
+            return False
     
 # 为了保持向后兼容，保留原有的函数接口
 _manager = WeChatManager()
