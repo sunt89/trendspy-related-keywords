@@ -68,7 +68,7 @@ LOGGING_CONFIG = {
 
 # Data Storage Configuration
 STORAGE_CONFIG = {
-    'data_dir_prefix': 'data_',  # 数据目录前缀
+    'data_dir_prefix': 'reports/',  # 数据目录前缀
     'report_filename_prefix': 'daily_report_',  # 报告文件名前缀
     'json_filename_prefix': 'related_queries_'  # JSON文件名前缀
 } 

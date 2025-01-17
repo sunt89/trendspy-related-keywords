@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  trends:
+    image: trendspy:1.0
+    container_name: trendspy
+    env_file:
+      - .env
+    volumes:
+      - ./config.py:/app/config.py
+      - ./reports/:/app/reports/
+    restart: unless-stopped
