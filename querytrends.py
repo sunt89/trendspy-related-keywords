@@ -4,112 +4,70 @@ import json
 import time
 import random
 from datetime import datetime
-import backoff  
-from config import TRENDS_CONFIG
 import requests
 from urllib.parse import quote
 import re
 
-def get_google_nid():
-    """
-    自动获取Google NID cookie
-    """
-    session = requests.Session()
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-    }
-    
-    try:
-        # 访问Google主页获取初始cookie
-        response = session.get('https://www.google.com/', headers=headers)
-        response.raise_for_status()
-        
-        # 从响应中提取NID
-        cookies = session.cookies.get_dict()
-        nid = cookies.get('NID')
-        
-        if nid:
-            return nid
-        
-        # 如果没有直接获取到NID，尝试从搜索页面获取
-        search_term = quote('test')
-        response = session.get(f'https://www.google.com/search?q={search_term}', headers=headers)
-        response.raise_for_status()
-        
-        cookies = session.cookies.get_dict()
-        nid = cookies.get('NID')
-        
-        if nid:
-            return nid
-            
-        # 如果还是没有获取到，从响应内容中尝试提取
-        match = re.search(r'NID=([^;]+)', response.text)
-        if match:
-            return match.group(1)
-            
-        return None
-    except Exception as e:
-        print(f"获取NID失败: {str(e)}")
-        return None
-
-@backoff.on_exception(
-    backoff.expo,  # 指数退避策略
-    Exception,     # 捕获所有异常
-    max_tries=5    # 最大重试次数
-)
 def get_related_queries(keyword, geo='', timeframe='today 12-m'):
     """
-    获取关键词的相关查询数据，带重试机制和请求限制
+    获取关键词的相关查询数据，带请求限制
     """
-    tr = Trends(hl='zh-CN')
-    
-    # 随机化 User-Agent
-    user_agents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    ]
-    
-    headers = {
-        'referer': 'https://www.google.com/',
-        'User-Agent': random.choice(user_agents),
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
-    }
-    
-    # 尝试从配置获取NID，如果没有则自动获取
-    nid = TRENDS_CONFIG.get('nid')
-    if not nid:
-        nid = get_google_nid()
-        if nid:
-            print("成功自动获取NID")
-    
-    if nid:
-        headers['Cookie'] = f'NID={nid}'
-    
-    try:
-        # 检查请求限制
-        request_limiter.wait_if_needed()
+    while True:  # 添加无限重试循环
+        tr = Trends(hl='zh-CN')
         
-        # 添加随机延时
-        delay = random.uniform(1, 3)
-        time.sleep(delay)
+        # 随机化 User-Agent
+        user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ]
         
-        related_data = tr.related_queries(
-            keyword,
-            headers=headers,
-            geo=geo,
-            timeframe=timeframe
-        )
-        return related_data
+        headers = {
+            'referer': 'https://www.google.com/',
+            'User-Agent': random.choice(user_agents),
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        }
         
-    except Exception as e:
-        print(f"尝试获取数据时出错: {str(e)}")
-        raise
+        try:
+            # 检查请求限制
+            request_limiter.wait_if_needed()
+            
+            # 添加随机延时
+            delay = random.uniform(1, 3)
+            time.sleep(delay)
+            
+            related_data = tr.related_queries(
+                keyword,
+                headers=headers,
+                geo=geo,
+                timeframe=timeframe
+            )
+            print(f"成功获取数据！")
+            return related_data
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"尝试获取数据时出错: {error_msg}")
+            
+            # 如果是配额超限错误，等待后重试
+            if "API quota exceeded" in error_msg:
+                wait_time = random.uniform(300, 360)  # 等待5-6分钟
+                print(f"API配额超限，等待 {wait_time:.1f} 秒后重试...")
+                time.sleep(wait_time)
+                continue  # 继续下一次重试
+            
+            # 如果是NoneType错误，也等待后重试
+            if "'NoneType' object has no attribute 'raise_for_status'" in error_msg:
+                wait_time = random.uniform(60, 120)  # 等待1-2分钟
+                print(f"请求返回为空，等待 {wait_time:.1f} 秒后重试...")
+                time.sleep(wait_time)
+                continue  # 继续下一次重试
+                
+            # 其他错误则直接抛出
+            raise
 
 def batch_get_queries(keywords, geo='', timeframe='today 12-m', delay_between_queries=5):
     """
@@ -124,7 +82,7 @@ def batch_get_queries(keywords, geo='', timeframe='today 12-m', delay_between_qu
             
             # 在请求之间添加延时
             if keyword != keywords[-1]:  # 如果不是最后一个关键词
-                delay = delay_between_queries + random.uniform(0, 2)
+                delay = delay_between_queries + random.uniform(0, 2)  # 基础延时加0-2秒的随机延时
                 print(f"等待 {delay:.1f} 秒后继续下一个查询...")
                 time.sleep(delay)
                 
@@ -215,9 +173,9 @@ def main():
             keywords,
             geo=geo,
             timeframe=timeframe,
-            delay_between_queries=5  # 设置请求间隔
+            delay_between_queries=100  # 设置请求间隔
         )
-        
+
         # 处理和保存结果
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         for keyword, data in results.items():

@@ -6,7 +6,7 @@ load_dotenv()
 
 # Notification Configuration
 NOTIFICATION_CONFIG = {
-    'method': 'wechat',  # 可选值: 'email', 'wechat', 'both'
+    'method': 'email',  # 可选值: 'email', 'wechat', 'both'
     'wechat_receiver': os.getenv('TRENDS_WECHAT_RECEIVER', ''),  # 微信接收者的备注名或微信号
 }
 
@@ -21,26 +21,21 @@ EMAIL_CONFIG = {
 
 # Keywords to monitor
 KEYWORDS = [
-    "AI",
-    "Generator",
-    "AI Agent",
-    "Sprunki",
-    "AI Image",
-    "AI Video",
-    "AI Voice",
-    "AI Chatbot",
-    "Game",
-    "Game Mod",
+   
+    "Image",
+    "Video",
+    "Music",
+    "Voice",
+    "Text",
     # Add more keywords as needed
 ]
 
 
 # Trends Query Configuration
 TRENDS_CONFIG = {
-    'timeframe': 'last-2-d',  # 可选值: now 1-d, now 7-d, now 30-d, now 90-d, today 12-m, 
+    'timeframe': 'last-3-d',  # 可选值: now 1-d, now 7-d, now 30-d, now 90-d, today 12-m, 
                             # last-2-d, last-3-d 或者 "2024-01-01 2024-01-31"
     'geo': '',  # 地区代码，例如: 'US' 表示美国, 'CN' 表示中国, '' 表示全球
-    'nid': os.getenv('TRENDS_NID', ''),  # Google NID cookie，用于认证
 }
 
 # Rate Limiting Configuration
@@ -54,7 +49,7 @@ RATE_LIMIT_CONFIG = {
 
 # Schedule Configuration
 SCHEDULE_CONFIG = {
-    'hour': 13,                    # 计划执行的小时（0-23）
+    'hour': 23,                    # 计划执行的小时（0-23）
     'minute': 5,                 # 计划执行的分钟（0-59）
     'random_delay_minutes': 15   # 随机延迟的最大分钟数（可选）
 }
